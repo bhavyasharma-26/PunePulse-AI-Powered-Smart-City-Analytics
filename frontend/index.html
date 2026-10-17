@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PunePulse smart city analytics dashboard">
+  <title>PunePulse | Smart City Analytics</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#" data-page="overview">
+      <span class="brand-icon">P<span>•</span></span>
+      <span>
+        <strong>PunePulse</strong>
+        <small>SMART CITY ANALYTICS</small>
+      </span>
+    </a>
+
+    <div class="nav-label">WORKSPACE</div>
+
+    <nav class="nav-menu">
+      <button class="nav-item active" data-page="overview">◫ Overview</button>
+      <button class="nav-item" data-page="traffic">⌁ Traffic Analytics</button>
+      <button class="nav-item" data-page="aqi">◉ Air Quality (AQI)</button>
+      <button class="nav-item" data-page="waste">♻ Waste Management</button>
+      <button class="nav-item" data-page="ai">✳ AI City Advisor</button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="status-card">
+        <span class="status-dot"></span>
+        <div>
+          <strong>API connection</strong>
+          <small id="sidebarStatus">Connecting...</small>
+        </div>
+      </div>
+      <div class="sidebar-foot">PUNEPULSE · PROJECT 2026</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="mobile-menu" id="mobileMenu" aria-label="Toggle navigation">☰</button>
+      <div class="breadcrumb">Pune / <span id="breadcrumbPage">City Overview</span></div>
+      <div class="topbar-right">
+        <span class="live-pill"><span class="status-dot"></span> API STATUS</span>
+        <button class="refresh-btn" id="refreshBtn">↻ <span>Refresh data</span></button>
+      </div>
+    </header>
+
+    <section class="page-heading">
+      <div>
+        <div class="eyebrow">PUNE SMART CITY DASHBOARD</div>
+        <h1 id="pageTitle">City Overview<span class="title-dot">.</span></h1>
+        <p id="pageSubtitle">A unified view of Pune's urban environment and infrastructure.</p>
+      </div>
+      <div class="date-chip" id="updatedAt">Waiting for data...</div>
+    </section>
+
+    <div id="errorBanner" class="error-banner hidden">
+      <strong>Unable to reach the backend.</strong>
+      Make sure FastAPI is running at http://127.0.0.1:8000.
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="page-section" id="page-overview">
+      <div class="section-heading">
+        <div>
+          <h2>City at a glance</h2>
+          <p>Key indicators from your loaded datasets</p>
+        </div>
+        <span class="data-tag">DATASET CONNECTED</span>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <span class="kpi-label">OBSERVED VEHICLE COUNTS</span>
+          <div class="kpi-value" id="totalVehicles">—</div>
+          <div class="kpi-foot" id="junctionCount">— junctions</div>
+        </article>
+
+        <article class="kpi-card teal-card">
+          <span class="kpi-label">AQI DATA POINTS</span>
+          <div class="kpi-value" id="aqiReadings">—</div>
+          <div class="kpi-foot" id="stationCount">— stations</div>
+        </article>
+
+        <article class="kpi-card blue-card">
+          <span class="kpi-label">WASTE RECORDS</span>
+          <div class="kpi-value" id="wasteRecords">—</div>
+          <div class="kpi-foot">Collection and segregation</div>
+        </article>
+
+        <article class="kpi-card orange-card">
+          <span class="kpi-label">MONITORED JUNCTIONS</span>
+          <div class="kpi-value" id="junctionKpi">—</div>
+          <div class="kpi-foot">Dataset coverage</div>
+        </article>
+      </div>
+
+      <div class="content-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Traffic by junction</h3>
+              <p>Recorded vehicle counts</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="trafficOverviewChart"></canvas></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Vehicle mix</h3>
+              <p>Across monitored junctions</p>
+            </div>
+          </div>
+          <div class="chart-wrap chart-doughnut"><canvas id="vehicleMixChart"></canvas></div>
+        </article>
+      </div>
+
+      <div class="content-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <div><h3>Air quality snapshot</h3><p>Available station datasets</p></div>
+            <button class="text-link" data-page="aqi">View details →</button>
+          </div>
+          <div id="aqiSnapshot" class="snapshot-list">
+            <div class="empty-state">Loading AQI summary...</div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div><h3>Waste management</h3><p>Reported operational indicators</p></div>
+            <button class="text-link" data-page="waste">View details →</button>
+          </div>
+          <div id="wasteSnapshot" class="snapshot-list">
+            <div class="empty-state">Loading waste summary...</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- TRAFFIC -->
+    <section class="page-section hidden" id="page-traffic">
+      <div class="section-heading">
+        <div>
+          <h2>Traffic analytics</h2>
+          <p>Compare vehicle-count values across junctions.</p>
+        </div>
+        <span class="data-tag">HISTORICAL DATA</span>
+      </div>
+
+      <div class="kpi-grid three-kpis">
+        <article class="kpi-card">
+          <span class="kpi-label">JUNCTIONS</span>
+          <div class="kpi-value" id="trafficJunctionsDetail">—</div>
+        </article>
+        <article class="kpi-card teal-card">
+          <span class="kpi-label">CAR COUNTS</span>
+          <div class="kpi-value" id="carCounts">—</div>
+        </article>
+        <article class="kpi-card blue-card">
+          <span class="kpi-label">MOTORBIKE COUNTS</span>
+          <div class="kpi-value" id="bikeCounts">—</div>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div><h3>Vehicle counts by junction</h3><p>Cars, motorbikes, buses and trucks</p></div>
+        </div>
+        <div class="chart-wrap chart-tall"><canvas id="trafficDetailChart"></canvas></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>AI anomaly detection</h3>
+            <p>Isolation Forest on 5-minute vehicle flow. Red points are unusual intervals.</p>
+          </div>
+          <select id="anomalyJunction" class="dark-select"></select>
+        </div>
+        <div class="chart-wrap chart-tall"><canvas id="trafficAnomalyChart"></canvas></div>
+        <p class="mini-note" id="trafficAnomalyNote">Loading anomaly detection...</p>
+        <div id="trafficAnomalyList" class="snapshot-list"></div>
+      </article>
+
+      <article class="panel table-panel">
+        <div class="panel-header"><div><h3>Junction breakdown</h3><p>Values returned by the Traffic API</p></div></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Junction</th><th>Cars</th><th>Motorbikes</th><th>Buses</th><th>Trucks</th><th>Total</th></tr></thead>
+            <tbody id="trafficTable"><tr><td colspan="6">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- AIR QUALITY -->
+    <section class="page-section hidden" id="page-aqi">
+      <div class="section-heading">
+        <div>
+          <h2>Air quality analytics</h2>
+          <p>Historical trends, forecast comparisons and station-wise readings.</p>
+        </div>
+        <span class="data-tag">AQI ANALYSIS</span>
+      </div>
+
+      <div class="kpi-grid three-kpis">
+        <article class="kpi-card teal-card">
+          <span class="kpi-label">DATA POINTS</span>
+          <div class="kpi-value" id="aqiPointsDetail">—</div>
+          <div class="kpi-foot">Historical observations</div>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">MONITORING DATASETS</span>
+          <div class="kpi-value" id="aqiStationsDetail">—</div>
+          <div class="kpi-foot">Available station files</div>
+        </article>
+        <article class="kpi-card orange-card">
+          <span class="kpi-label">AVERAGE READING</span>
+          <div class="kpi-value" id="aqiAverageDetail">—</div>
+          <div class="kpi-foot">Mean of station averages</div>
+        </article>
+      </div>
+
+      <!-- COMPARISON CHART 1 -->
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>Historical vs predicted AQI</h3>
+            <p>Recorded daily mean compared with the experimental seven-day forecast.</p>
+          </div>
+          <span class="chart-tag">OBSERVED + FORECAST</span>
+        </div>
+
+        <div class="date-filter">
+          <label>From <input type="date" id="aqiStart"></label>
+          <label>To <input type="date" id="aqiEnd"></label>
+          <button type="button" id="aqiApply">Apply</button>
+          <button type="button" id="aqiReset" class="secondary">Reset</button>
+        </div>
+
+        <div class="comparison-legend">
+          <span><i class="legend-line historical-line"></i> Historical AQI</span>
+          <span><i class="legend-line predicted-line"></i> Predicted AQI</span>
+        </div>
+
+        <div class="chart-wrap chart-tall">
+          <canvas id="aqiComparisonChart"></canvas>
+        </div>
+        <p class="mini-note" id="aqiComparisonNote">Loading historical and predicted readings...</p>
+        <div class="model-accuracy" id="modelAccuracy"></div>
+      </article>
+
+      <!-- COMPARISON CHART 2 -->
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>AQI comparison across monitoring stations</h3>
+            <p>Compare the historical reading trends for each station dataset.</p>
+          </div>
+          <select id="stationSelect" class="dark-select">
+            <option value="">All stations</option>
+          </select>
+        </div>
+
+        <div class="chart-wrap chart-tall">
+          <canvas id="stationComparisonChart"></canvas>
+        </div>
+        <p class="mini-note" id="stationComparisonNote">Loading station comparisons...</p>
+      </article>
+
+      <article class="panel table-panel">
+        <div class="panel-header">
+          <div><h3>Station summary</h3><p>Statistics returned by the AQI API</p></div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Station dataset</th><th>Readings</th><th>Average</th><th>Latest</th><th>Latest timestamp</th></tr>
+            </thead>
+            <tbody id="aqiTable"><tr><td colspan="5">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- WASTE -->
+    <section class="page-section hidden" id="page-waste">
+      <div class="section-heading">
+        <div><h2>Waste management</h2><p>Collection, equipment and segregation indicators.</p></div>
+        <span class="data-tag">REPORTED DATA</span>
+      </div>
+
+      <div class="kpi-grid three-kpis">
+        <article class="kpi-card blue-card">
+          <span class="kpi-label">EQUIPMENT RECORDS</span>
+          <div class="kpi-value" id="equipmentCount">—</div>
+        </article>
+        <article class="kpi-card teal-card">
+          <span class="kpi-label">WASTE REPORTED</span>
+          <div class="kpi-value" id="wasteTonnes">—</div>
+          <div class="kpi-foot">Tonnes per day, as recorded</div>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">STREET BINS</span>
+          <div class="kpi-value" id="streetBins">—</div>
+        </article>
+      </div>
+
+      <div class="content-grid">
+        <article class="panel">
+          <div class="panel-header"><div><h3>Dataset coverage</h3><p>Records available to the backend</p></div></div>
+          <div class="chart-wrap chart-doughnut"><canvas id="wasteRecordsChart"></canvas></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Reported indicators</h3><p>Calculated from available columns</p></div></div>
+          <div id="wasteMetrics" class="snapshot-list"><div class="empty-state">Loading...</div></div>
+        </article>
+      </div>
+
+      <div class="notice">
+        <strong>Data quality note</strong>
+        <p>These figures are derived from supplied datasets. Validate the source before treating them as official city-wide totals.</p>
+      </div>
+    </section>
+
+    <!-- AI ADVISOR -->
+    <section class="page-section hidden" id="page-ai">
+      <div class="ai-intro">
+        <div>
+          <div class="eyebrow">INTELLIGENCE LAYER</div>
+          <h2>From city data to <em>better decisions.</em></h2>
+          <p>Experimental machine-learning insights grounded in the datasets loaded into PunePulse.</p>
+        </div>
+        <div class="ai-orbit">ML</div>
+      </div>
+
+      <div class="ai-disclaimer">
+        <strong>Research prototype</strong>
+        <span>Historical data only. Not a live traffic feed or official public-health warning.</span>
+      </div>
+
+      <div class="content-grid ai-grid">
+        <article class="panel">
+          <div class="panel-header"><div><h3>Traffic patterns</h3><p>Relative load and unusual patterns</p></div></div>
+          <div id="aiTrafficList" class="snapshot-list"><div class="empty-state">Loading...</div></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header"><div><h3>AQI trend outlook</h3><p>Random Forest regression forecast</p></div></div>
+          <div id="aiAQISummary" class="snapshot-list"><div class="empty-state">Loading...</div></div>
+          <div class="chart-wrap ai-chart"><canvas id="aiForecastChart"></canvas></div>
+          <p id="aiForecastNote" class="mini-note"></p>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-header"><div><h3>Suggested city actions</h3><p>Recommendations based on available evidence</p></div></div>
+        <div id="aiRecommendations" class="recommendation-grid"><div class="empty-state">Loading...</div></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header"><div><h3>Ask PunePulse</h3><p>Ask about traffic, air quality, forecasts or waste.</p></div></div>
+        <form id="advisorForm" class="advisor-form">
+          <input id="advisorQuestion" type="text" placeholder="Which junction has the most traffic?" required>
+          <button type="submit">Ask ↗</button>
+        </form>
+        <div class="prompt-chips">
+          <button type="button" data-prompt="Which junction has the most traffic?">Traffic hotspot</button>
+          <button type="button" data-prompt="What is the air quality trend?">AQI trend</button>
+          <button type="button" data-prompt="Can you forecast the next week?">Forecast</button>
+          <button type="button" data-prompt="How is waste segregation doing?">Waste insights</button>
+        </div>
+        <div id="advisorAnswer" class="advisor-answer">Your answer will appear here.</div>
+      </article>
+
+      <div id="aiMethods" class="mini-note"></div>
+    </section>
+
+    <footer class="footer">
+      <span><strong>P</strong> PunePulse · Smart City Analytics</span>
+      <span>Academic project / Dataset-based insights</span>
+    </footer>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
