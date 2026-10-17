@@ -1,4 +1,4 @@
-# PunePulse — AI-Powered Smart City Analytics
+# PunePulse : AI-Powered Smart City Analytics
 
 PunePulse is a smart city analytics project focused on understanding urban challenges in Pune using data analytics, interactive visualizations, and machine learning. It brings together traffic, air quality, and waste management data in a single dashboard to make city-level insights easier to explore.
 
